@@ -1,0 +1,94 @@
+from pulp import *
+from math import *
+
+def maximize_edge(vertex,clique,independent_set):
+  # edge variable list and setup x variable
+  edges_number = combination(range(1,vertex+1),2)
+  edges = [f'x{num[0]},{num[1]}' for num in edges_number]
+  x = [LpVariable(edges[i],lowBound = 0,cat="Binary") for i in range(len(edges))]
+
+  clique_list = creat_variable_number_list(vertex,clique,x)
+  independent_set_list = creat_variable_number_list(vertex,independent_set,x)
+
+  # setup problem and add objective/constraint function,then solve it
+  problem = LpProblem('Search_counter_Example', LpMaximize)
+  problem += LpAffineExpression([(x[i],1) for i in range(len(x))])
+
+  clique_edge_quantity = math.comb(clique,2)
+  for j in range(len(clique_list)):
+    problem += LpConstraint(LpAffineExpression([(x[i],1) for i in clique_list[j]]),-1,'',clique_edge_quantity-1)
+  for j in range(len(independent_set_list)):
+    problem += LpConstraint(LpAffineExpression([(x[i],1) for i in independent_set_list[j]]),1,'',1)
+
+
+  problem.solve()
+  print(problem)
+  print(f"problem status: {problem.status}")
+
+  # print optimal value and variable value
+  opt_value = problem.objective.value()
+  print(f"z = {opt_value}")
+
+  for var in problem.variables():
+    name = var.name
+    value = var.value()
+    print(f"{name}={value}")
+
+
+def minimize_edge(vertex,clique,independent_set):
+  # edge variable list and setup x variable
+  edges_number = combination(range(1,vertex+1),2)
+  edges = [f'x{num[0]},{num[1]}' for num in edges_number]
+  x = [LpVariable(edges[i],lowBound = 0,cat="Binary") for i in range(len(edges))]
+
+  clique_list = creat_variable_number_list(vertex,clique,x)
+  independent_set_list = creat_variable_number_list(vertex,independent_set,x)
+
+  # setup problem and add objective/constraint function,then solve it
+  problem = LpProblem('Search_counter_Example', LpMinimize)
+  problem += LpAffineExpression([(x[i],1) for i in range(len(x))])
+
+
+  clique_edge_quantity = math.comb(clique,2)
+  for j in range(len(clique_list)):
+    problem += LpConstraint(LpAffineExpression([(x[i],1) for i in clique_list[j]]),-1,'',clique_edge_quantity-1)
+  for j in range(len(independent_set_list)):
+    problem += LpConstraint(LpAffineExpression([(x[i],1) for i in independent_set_list[j]]),1,'',1)
+
+  problem.solve()
+
+  print(problem)
+  print(f"problem status: {problem.status}")
+
+  # print optimal value and variable value
+  opt_value = problem.objective.value()
+  print(f"z = {opt_value}")
+
+  for var in problem.variables():
+    name = var.name
+    value = var.value()
+    print(f"{name}={value}")
+
+def creat_variable_number_list(vertex,number,x):
+    # constraint variable list
+    c = combination(range(1,vertex+1),number)
+    c_List = [t for t in c]
+
+    constraint_variable = []
+    for i in range(len(c_List)):
+      l = []
+      c = combination(c_List[i],2)
+      for t in c:
+        word = f'x{t[0]},{t[1]}'
+        l.append(word)
+      constraint_variable.append(l)
+
+    # switch constraint variable to number list
+    x_index = {}
+    for i in range(len(x)):
+      x_index[f'{x[i]}'] = i
+    for item in constraint_variable:
+      for i in range(len(item)):
+        item[i] = x_index[f'{item[i]}']
+
+    return constraint_variable
